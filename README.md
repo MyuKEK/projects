@@ -1,1 +1,1 @@
-# discord
+# paar kleinigkeiten
