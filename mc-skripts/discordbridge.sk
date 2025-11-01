@@ -7,7 +7,7 @@
 
 options:
 	prefix: &9Discord Sync&7 >>&r
-	guildID: "1388237343055679488" # Deine Discord Server ID
+	guildID: "0000000000000" # Deine Discord Server ID
 	playerDataDir: "/Savegames/Safety" # Ordner für Spieler-Daten
 	discordRolesPath: "/Savegames/discordroles.yml" # Pfad zur Rollen-Datei
 	connectedIDsPath: "/Savegames/SkriptSaves/discord_ids.yml" # Pfad zur Datei mit verbundenen IDs
