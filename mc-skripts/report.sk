@@ -1,0 +1,31 @@
+#Benötigt SkCord
+options:
+	prefix: &6&lCamelMC&r &8| &7
+
+
+
+command /report <Player> <Text>:
+	trigger:
+		if arg-1 is online:
+			if arg-2 is set:
+				create a new embed:
+					title: "Neuer Report"
+					description: "%arg-1% wurde von %player% gemeldet. Grund: %arg-2%"
+					color: "#3437eb"
+					timestamp: yes
+					saveInto: {_report}
+				play sound "ENTITY_PLAYER_LEVELUP" with volume 1 for player
+				send "{@prefix}&aDanke für deine Meldung. Wir werden uns schnellst möglich darum kümmern"
+				create a webhook message:
+					webhook: "https://discord.com/api/webhooks/1307835890906693763/OHkVKeBtoPRcyMSkOvbPUOwUklQl0kbG6WGUuo13qUdHlXIRNAuQ_zP4fmb7U3ghs-Qy"
+					embed: {_report}
+				loop all players:
+					if loop-player has permission "report.alert":
+						send "{@prefix}&a%player% &7hat den Spieler &c%arg-1%&7 gemeldet. Grund: &c%arg-2%" to loop-player
+						play sound "block.bell.use" with volume 1 for loop-player
+			else:
+				send "&cGibt einen Grund an" to player
+		else:
+			send "&cGib einen gültigen Spieler an" to player
+		
+			 

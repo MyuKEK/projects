@@ -1,0 +1,27 @@
+on chat:
+	if message starts with "@T":
+		if player has permission "team.chat":
+			cancel event
+			loop all players:
+				if loop-player has permission "team.chat":
+					set {_nachricht} to message
+					replace first "@T" with "" in {_nachricht}
+					send "&b&lTeamchat &r&8| &f%player% &8>>&f%{_nachricht}%" to loop-player
+					play sound "ui.button.click" with volume 1 for loop-player
+				else:
+					stop
+		else:
+			stop
+	if message starts with "@t":
+		if player has permission "team.chat":
+			cancel event
+			loop all players:
+				if loop-player has permission "team.chat":
+					set {_nachricht} to message
+					replace first "@t" with "" in {_nachricht}
+					send "&b&lTeamchat &r&8| &f%player% &8>>&f%{_nachricht}%" to loop-player
+					play sound "ui.button.click" with volume 1 for loop-player
+				else:
+					stop
+		else:
+			stop

@@ -1,0 +1,167 @@
+
+# ---------------------------------
+# Benötigte Addons:
+# - DiSky (für die Discord-Integration)
+# - skript-yaml (für das Speichern von Spielerdaten)
+# ---------------------------------
+
+options:
+	prefix: &9Discord Sync&7 >>&r
+	guildID: "1388237343055679488" # Deine Discord Server ID
+	playerDataDir: "/Savegames/Safety" # Ordner für Spieler-Daten
+	discordRolesPath: "/Savegames/discordroles.yml" # Pfad zur Rollen-Datei
+	connectedIDsPath: "/Savegames/SkriptSaves/discord_ids.yml" # Pfad zur Datei mit verbundenen IDs
+
+
+define new bot named "Discord Bridge":
+	token: "MTE0NDc5OTY1NzM5NDk4MzA4NA.G0m3RB.ci-svWLRPAHLQbh4wUHdV86BmRwxf5DBhpxlRQ"
+	intents: default intents
+	policy: all
+	auto reconnect: true
+	
+	on ready:
+		send "Bot is online!" to console
+
+discord command verify:
+	prefixes: "!"
+	trigger:
+		create a new message and store it in {_msg}:
+			set the content of the message to ""
+
+			make embed:
+				set title of embed to "Verifizierung"
+				set embed color of embed to light green
+				set description of embed to "Drücke auf den Knopf um deinen Minecraft Account mit deinem Discord Account zu verbinden und dich zu verifizieren!%nl%**Du musst dich auf dem Minecraft Server befinden und /verify verwenden**"
+				set footer of embed to ""
+				add last embed to the embeds of the message
+
+			add new primary button with id "verifybutton" named "Verifizieren" to rows of message
+		reply with "Du hast eine Nachricht von mir erhalten"
+		open private channel of event-user and store it in {_channel}
+		post {_msg} to {_channel}
+
+
+on button click:
+	if event-string is "verifybutton":
+		set {_modal} to a new modal with id "discord-mc-verify" named "Verifizierung"
+		set {_mcname} to new short text input with id "mcnameinput" named "Dein Minecraft Name" # 
+		set {_mccode} to new short text input with id "mccodeinput" named "Verifizierungscode" # 
+		set placeholder of {_mcname} to "NoobPlayerMC"
+		set placeholder of {_mccode} to "012345"
+		set minimum range of {_mcname} to 3 # Minimum length of the input
+		set maximum range of {_mcname} to 16 # Maximum length of the input
+		set required state of {_mcname} to true # Whether the input is required or not
+		set minimum range of {_mccode} to 6 # Minimum length of the input
+		set maximum range of {_mccode} to 6 # Maximum length of the input
+		set required state of {_mccode} to true # Whether the input is required or not
+		add {_mcname} to rows of {_modal}
+		add {_mccode} to rows of {_modal}
+		show {_modal} to the user
+
+on modal receive:
+	event-string is "discord-mc-verify"
+	set {_mcname} to value of text input with id "mcnameinput"
+	set {_mccode} to value of text input with id "mccodeinput"
+	set {_player} to {_mcname} parsed as offline player
+	if {_player} is not set:
+		reply with "Der Spieler **%{_mcname}%** wurde nicht gefunden"
+		stop
+
+	set {_uuid} to uuid of {_player}
+	load yaml "%{@playerDataDir}%/%{_uuid}%.yml" as "playerdata"
+	
+	if skript-yaml value "Verified" from "playerdata" is true:
+		reply with "Dieser Account wurde bereits verbunden"
+		stop
+
+	set {_verifycode} to skript-yaml value "VerifyCode" from "playerdata"
+	if {_mccode} is not {_verifycode}:
+		reply with "Falscher Code!"
+		stop
+
+	load yaml {@connectedIDsPath} as "discord_ids"
+	set {_id} to discord id of event-user
+	if skript-yaml list "ConnectedIDs" from "discord_ids" contains {_id}:
+		reply with "Dieser Discord Account ist bereits mit einem Minecraft Account Verbunden"
+		stop
+
+	# Verknüpfung durchführen
+	add {_id} to skript-yaml list "ConnectedIDs" from "discord_ids"
+	set skript-yaml value "Verified" from "playerdata" to true
+	set skript-yaml value "DiscordID" from "playerdata" to "%{_id}%"
+	save yaml "playerdata"
+	save yaml "discord_ids"
+	reply with "Account **%{_mcname}%** erfolgreich verbunden"
+
+
+on join:
+	load yaml "%{@playerDataDir}%/%uuid of player%.yml" as "playerdata"
+	set {_verified} to skript-yaml value "Verified" from "playerdata"
+	set {_verifycode.%uuid of player%} to join 6 random alphanumeric characters between "0" and "Z"
+	set skript-yaml value "VerifyCode" from "playerdata" to {_verifycode.%uuid of player%}
+	
+	if {_verified} is true:
+		load yaml {@discordRolesPath} as "discordroles"
+		set {_dcid} to skript-yaml value "DiscordID" from "playerdata"
+		set {_rank} to skript-yaml value "Rank" from "playerdata"
+		set {_rankid} to skript-yaml value "%{_rank}%" from "discordroles"
+		set {_dcmember} to member with id "%{_dcid}%" in guild with id {@guildID}
+		if {_dcmember} is not set: # Zuerst prüfen, ob das Mitglied auf dem Discord-Server existiert.
+			stop
+		
+		if {_dcmember} has discord role with id "%{_rankid}%": # Dann prüfen, ob es bereits die korrekte Rolle hat.
+			stop
+		
+		# Wenn die oberen Prüfungen nicht zutreffen, hat das Mitglied die falsche Rolle -> aktualisieren.
+		loop yaml nodes of "discordroles":
+			set {_loopid} to skript-yaml value loop-value from "discordroles"
+			remove role with id "%{_loopid}%" from roles of {_dcmember}
+		wait 1.5 seconds
+		add role with id "%{_rankid}%" to roles of {_dcmember}
+	else:		
+		if {_verified} is not set:
+			set skript-yaml value "Verified" from "playerdata" to false
+	
+	save yaml "playerdata"
+
+
+
+command /verify:
+	trigger:
+		load yaml "%{@playerDataDir}%/%uuid of player%.yml" as "playerdata"
+		if skript-yaml value "Verified" from "playerdata" is true:
+			send "{@prefix} Du bist bereits Verifiziert!"
+		else:
+			set {_verifycode} to skript-yaml value "VerifyCode" from "playerdata"
+			Send "{@prefix} Verwende folgenden Code mit !verify im <link:https://discord.gg/k2W7C6RVkF>&f&nDiscord&r<reset> um deine Accounts zu verknüfen:"
+			Send "&f%{_verifycode}%"
+
+
+command /unlink <offline player>:
+	permission: discordbridge.unlink
+	trigger:
+		load yaml "%{@playerDataDir}%/%uuid of arg-1%.yml" as "playerdata"
+		set {_discordid} to skript-yaml value "DiscordID" from "playerdata"
+		if {_discordid} is not set:
+			send "{@prefix} &cDieser Spieler hat keinen Verknüften Discord Account"
+			stop
+		if {_discordid} is set:
+			# Ränge entfernen wie bei on join
+			load yaml {@discordRolesPath} as "discordroles"
+			set {_dcmember} to member with id "%{_discordid}%" in guild with id {@guildID}
+			loop yaml nodes of "discordroles":
+				set {_loopid} to skript-yaml value loop-value from "discordroles"
+				remove role with id "%{_loopid}%" from roles of {_dcmember}
+			
+			load yaml {@connectedIDsPath} as "discord_ids"
+			remove "%{_discordid}%" from skript-yaml list "ConnectedIDs" from "discord_ids"
+			
+			delete skript-yaml value "DiscordID" from "playerdata"
+			set skript-yaml value "Verified" from "playerdata" to false
+			
+			save yaml "playerdata"
+			save yaml "discord_ids"
+			send "{@prefix} &aDiscord Account erfolgreich entfernt"
+
+on disconnect:
+	save yaml "%{@playerDataDir}%/%uuid of player%.yml"

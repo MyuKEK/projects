@@ -1,0 +1,89 @@
+on join:
+	if {lvl::%player%} is not set:	
+		set {lvl::%player%} to 1.0
+		set {xp::%player%} to 0
+		console command "/setlevel %player% 1"
+
+
+every 20 ticks seconds:
+	loop all players:
+		if {lvl::%loop-player%} >= 100:
+			set {maxxp::%loop-player%} to "Max"
+			set {xp::%loop-player%} to 0
+		else:
+			set {maxxp::%loop-player%} to 150 * {lvl::%loop-player%}
+		set {strengh::%loop-player%} to 5 * {lvl::%loop-player%}
+		set {hearths::%loop-player%} to 9 + 1 * {lvl::%loop-player%}
+		set {speed::%loop-player%} to 218 + 2 * {lvl::%loop-player%}
+		set walk speed of loop-player to 0.001 * {speed::%loop-player%}
+		set max health of loop-player to 1 * {hearths::%loop-player%}
+		if {lvl::%loop-player%} is not a number:
+			set {lvl::%loop-player%} to ({lvl::%loop-player%} parsed as number)
+		if {xp::%loop-player%} >= {maxxp::%loop-player%}:
+			set {xp::%loop-player%} to 0
+			console command "/addlevel %loop-player%"
+			play sound "ENTITY_PLAYER_LEVELUP" with volume 1 for loop-player
+			send title "&6&lLevel UP!" to loop-player
+			send subtitle "&7Du bist jetzt &eLevel %{lvl::%loop-player%}%!" to loop-player
+		send action bar "&7Level: %{lvl::%loop-player%}% (%{xp::%loop-player%}%/%{maxxp::%loop-player%}%) &7| &c%{hearths::%loop-player%}% ♥ &7| &b%{strengh::%loop-player%}% ⚔ &7| &a%{speed::%loop-player%}% 👟" to loop-player
+
+on block break:
+	if player's tool is enchanted with silk touch:
+		stop
+	else:
+		if block is any stone:
+			add 1  to {xp::%player%}
+		if block is iron ore:
+			add 2  to {xp::%player%}
+		if block is coal ore:
+			add 2  to {xp::%player%}
+		if block is gold ore:
+			add 3  to {xp::%player%}
+		if block is diamond ore:
+			add 4  to {xp::%player%}	
+		if block is emerald ore:
+			add 4  to {xp::%player%}
+		if block is lapis ore:
+			add 3  to {xp::%player%}
+		if block is redstone ore:
+			add 3  to {xp::%player%}
+
+on damage:
+	attacker is player:
+		add 0.01 * {strengh::%attacker%} to damage
+
+
+
+
+
+command /levelreset:
+	aliases: /resetlevel
+	permission: camelmc.lvlreset
+	trigger:
+		delete {lvl::%player%}
+		kick player due to "&cRejoine um den Reset zu vollenden"
+	
+command /setlevel [<Player>] [<Text>]:
+	permission: camelmc.setlvl
+	trigger:
+		set {lvl::%arg-1%} to arg-2
+
+command /addlevel [<Player>]:
+	permission: camelmc.addlvl
+	trigger:
+		set {lvl::%arg-1%} to {lvl::%arg-1%} + 1
+
+command /stats [<Player>]:
+	usage: &a&lSkyblock &r&7| &cVerwende /stats <Spieler>
+	trigger:
+		if arg-1 is set:
+			send "&7-------------- &aStats&7 --------------" to player
+			send "&7&l┃" to player
+			send "&7&l┃ &aSpieler: %arg-1%" to player
+			send "&7&l┃ &r&bLevel: %{lvl::%arg-1%}%" to player
+			send "&7&l┃ &r&6Prestige: &7Kommt Noch" to player
+			send "&7&l┃ &r&7XP: %{xp::%arg-1%}%/%{maxxp::%arg-1%}%" to player
+			send "&7&l┃" to player
+			send "&7&l-----------------------------" to player
+		else:
+			send "&a&lSkyblock &r&7| &cVerwende /stats <Spieler>" to player

@@ -1,0 +1,65 @@
+options:
+	prefix: &6&lCamelMC&r &8| &7
+
+
+command /double:
+	aliases: casino, gamble
+	trigger:
+		set {_gui} to chest inventory with 1 rows named "&e&lCasino"
+		set slot (integers between 0 and 9) of {_gui} to gray stained glass pane named "&7 "
+		set slot 4 of {_gui} to lime terracotta named "&aStarten &7(Doppelt oder nichts)" with lore "&7Setzte &a500€ &7um zu starten"
+		set slot 6 of {_gui} to book named "&6Informationen" with lore "&aVerdopple &7deinen Einsatz oder &cverliere &7alles", "&7 ", "&c⚠ Warnung ⚠" and "&cGlücksspiel kann süchtig machen"
+		open {_gui} to player
+
+on inventory click:
+	name of event-inventory is "&e&lCasino"
+	cancel event
+	event-inventory is not player's inventory
+	if clicked slot is 4:
+		if {geld.%player%} is smaller than 500:
+			close player's inventory
+			send "&cDu hast nicht genügend Geld"
+			play sound "block.note_block.bass" with volume 1 for player
+		else:
+			play sound "ui.button.click" with volume 1 to player
+			remove 500 from {geld.%player%}
+			close player's inventory
+			set {win.%player%} to 500
+			set {_gui} to chest inventory with 1 rows named "&b&lDoppelt oder nichts"
+			set slot (integers between 0 and 9) of {_gui} to gray stained glass pane named "&7 "
+			set slot 2 of {_gui} to gold block named "&6Verdoppeln (50/50)" with lore "&7Versuche dein Glück"
+			set slot 6 of {_gui} to arrow named "&cVerlassen" with lore "&7Verlasse das Spiel mit &a%{win.%player%}%€"
+			open {_gui} to player
+			
+			
+			
+on inventory click:
+	name of event-inventory is "&b&lDoppelt oder nichts"
+	cancel event
+	event-inventory is not player's inventory
+	if clicked slot is 2:
+		set {_hit} to random integer between 0 and 1
+		cancel event
+		if {_hit} = 1:
+			close player's inventory
+			play sound "block.note_block.bell" with volume 1 for player
+			set {win.%player%} to {win.%player%} * 2
+			set {_gui} to chest inventory with 1 rows named "&b&lDoppelt oder nichts"
+			set slot (integers between 0 and 9) of {_gui} to gray stained glass pane named "&7 "
+			set slot 2 of {_gui} to gold block named "&6Verdoppeln (50/50)" with lore "&7Versuche dein Glück"
+			set slot 6 of {_gui} to arrow named "&cVerlassen" with lore "&7Verlasse das Spiel mit &a%{win.%player%}%€"
+			open {_gui} to player
+		if {_hit} = 0:
+			close player's inventory
+			play sound "block.glass.break" with volume 1 to player
+			send "{@prefix}&cDu hast leider verloren"
+			delete {win.%player%}
+	if clicked slot is 6:
+		close player's inventory
+		play sound "ENTITY_PLAYER_LEVELUP" with volume 1 for player
+		send "{@prefix}&7Du hast &a%{win.%player%}%€ &7gewonnen!"
+		add {win.%player%} to {geld.%player%}
+		delete {win.%player%}
+			
+			
+			

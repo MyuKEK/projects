@@ -1,0 +1,115 @@
+options:
+	prefix: &6&lCamelMC&r &8| &7
+
+
+on inventory click:
+	name of event-inventory is "&6&lBank"
+	cancel event
+	event-inventory is not player's inventory
+	if clicked slot is 6:
+		close player's inventory
+		send "&aGib den auszuzahlenden Betrag ein:"
+		set {message.%player%} to true
+		set {auszahlung.%player%} to true
+	if clicked slot is 4:
+		cancel event
+	if clicked slot is 2:
+		close player's inventory
+		send "&aGib den einzuzahlenden Betrag ein:"
+		set {message.%player%} to true
+		set {einzahlung.%player%} to true
+		
+command /bank:
+	trigger:
+		set {einzahlung.%player%} to false
+		set {auszahlung.%player%} to false
+		set {message.%player%} to false
+		set {_gui} to chest inventory with 1 rows named "&6&lBank"
+		set slot (integers between 0 and 9) of {_gui} to gray stained glass pane named "&7 "
+		set slot 2 of {_gui} to lime concrete named "&aEinzahlen" with lore "&7Aktueller Betrag auf deinem Bankkonto: &a%{bank.%player%}%€"
+		set slot 4 of {_gui} to book named "&6Informationen" with lore "&7 ", "&7-> Alle &615 Minuten &7erhältst du &62 Prozent Zinsen&7", "&7auf das Guthaben deines Kontos" and "&7(Nur während du Online bist)"
+		set slot 6 of {_gui} to red concrete named "&cAuszahlen" with lore "&7Aktueller Betrag auf deinem Bankkonto: &a%{bank.%player%}%€" 
+		open {_gui} to player
+		
+on chat:
+	if {message.%player%} is true:
+		if message parsed as number is an number:
+			if {einzahlung.%player%} is true:
+				if {geld.%player%} is smaller than message parsed as number:
+					cancel event
+					send "&cDu hast nicht genügend Geld"
+					play sound "block.glass.break" with volume 1 to player
+					set {message.%player%} to false
+					stop
+				else:
+					set {_value} to message parsed as a number
+					cancel event
+					remove {_value} from {geld.%player%}
+					set {bank.%player%} to {bank.%player%} + {_value}
+					set {message.%player%} to false
+					play sound "ui.button.click" with volume 1 to player
+					execute player command "/bank"
+					stop
+			if {auszahlung.%player%} is true:
+				if {bank.%player%} is smaller than message parsed as number:
+					cancel event
+					send "&cDu hast nicht genügend Geld"
+					play sound "block.glass.break" with volume 1 to player
+					set {message.%player%} to false
+					stop
+				else:
+					set {_value} to message parsed as a number
+					cancel event
+					remove {_value} from {bank.%player%}
+					set {geld.%player%} to {geld.%player%} + {_value}
+					set {message.%player%} to false
+					play sound "ui.button.click" with volume 1 to player
+					execute player command "/bank"
+					stop
+		if message is "all" or "ALL":
+			if {auszahlung.%player%} is true:		
+				set {_value} to {bank.%player%}
+				cancel event
+				remove {_value} from {bank.%player%}
+				set {geld.%player%} to {geld.%player%} + {_value}
+				set {message.%player%} to false
+				play sound "ui.button.click" with volume 1 to player
+				execute player command "/bank"
+				stop
+			if {einzahlung.%player%} is true:
+				set {_value} to {geld.%player%}
+				cancel event
+				remove {_value} from {geld.%player%}
+				set {bank.%player%} to {bank.%player%} + {_value}
+				set {message.%player%} to false
+				play sound "ui.button.click" with volume 1 to player
+				execute player command "/bank"
+				stop
+		else:
+			send "&cGib einen gültigen Betrag ein"
+			cancel event
+	else:
+		stop
+		
+on player move:
+	if {message.%player%} is true:
+		send "&cVorgang abgebrochen"
+		set {einzahlung.%player%} to false
+		set {auszahlung.%player%} to false
+		set {message.%player%} to false
+		play sound "block.glass.break" with volume 1 to player
+		
+on join:
+		set {einzahlung.%player%} to false
+		set {auszahlung.%player%} to false
+		set {message.%player%} to false
+		
+		
+		
+every 15 minutes:
+	loop all players:
+		set {_add.%loop-player%} to {bank.%loop-player%} * 2 / 100
+		set {bank.%loop-player%} to {bank.%loop-player%} + {_add.%loop-player%}
+		send "{@prefix}&aZinsen &7wurden ausgezahlt. Du hast &a%{_add.%loop-player%}%€ &7erhalten." to loop-player
+		send "&7Neuer Kontostand: &a%{bank.%loop-player%}%€" to loop-player
+		play sound "ENTITY_PLAYER_LEVELUP" with volume 1 for loop-player

@@ -1,0 +1,205 @@
+options:
+	P: &6&lCamelMC&r &8| &7
+	m: &6&lCamelMC&r &8| &7Du darfst das nicht!
+
+
+on join:
+	if {stone.%player%} is not set:
+		set {stone.%player%} to 0
+	if {mobs.%player%} is not set:
+		set {mobs.%player%} to 0
+	if {fishes.%player%} is not set:
+		set {fishes.%player%} to 0
+	if {ores.%player%} is not set:
+		set {ores.%player%} to 0
+	
+
+
+#Inventar Events
+on inventory click:
+	name of current inventory of player is "&7➜ &9&lJobs":
+		cancel event
+		name of clicked item is "&6Holzfäller":
+			if {job.%player%} is not set: #Hier wird geschaut ob der Spieler schon in einem Job ist, wenn nein werden die unten führenden Zeilen abegspielt.
+				set {job.%player%} to "Holzfäller" #Hier wird der Job auf Holzfäller gesetzt. Die Variable steht dann für Design Technische sachen wie bei Zeile 148-162
+				close player's inventory
+				send "{@P} Du hast den &6Holzfäller Job &7erfolgreich betreten!"
+				stop
+			else: #Wenn er bereits in einem Job ist, dann werden diese 3 Zeilen abegspielt
+				send "{@P} Du bist bereits in einem Job!"
+				stop
+				
+		name of clicked item is "&6Minenarbeiter":
+			if {job.%player%} is not set:
+				set {job.%player%} to "Minenarbeiter"
+				set slot 16 of current inventory of player to red dye named "&cJob verlassen" with lore "&7Du bist aktuell im &6%{job.%player%}%-Job &7tätig"
+				send "{@P} Du hast den &6Minenarbeiter Job &7erfolgreich betreten!"
+				stop
+			else:
+				send "{@P} Du bist bereits in einem Job!"
+				stop
+
+		name of clicked item is "&6Jäger":
+			if {job.%player%} is not set:
+				set {job.%player%} to "Jäger"
+				set slot 16 of current inventory of player to red dye named "&cJob verlassen" with lore "&7Du bist aktuell im &6%{job.%player%}%-Job &7tätig"
+				send "{@P} Du hast den &6Jäger Job &7erfolgreich betreten!"
+				stop
+			else:
+				send "{@P} Du bist bereits in einem Job!"
+				stop
+				
+		name of clicked item is "&6Angler":
+			if {job.%player%} is not set:
+				set {job.%player%} to "Angler"
+				set slot 16 of current inventory of player to red dye named "&cJob verlassen" with lore "&7Du bist aktuell im &6%{job.%player%}%-Job &7tätig"
+				send "{@P} Du hast den &6Angler Job &7erfolgreich betreten!"
+				stop
+			else:
+				send "{@P} Du bist bereits in einem Job!"
+				stop
+		
+		name of clicked item is "&6Stats":
+			make player execute command "/job stats"
+
+		name of clicked item is "&cJob verlassen":
+			if {job.%player%} is set:
+				send "{@P} Du hast den &6%{job.%player%}% Job &7verlassen!"
+				delete {job.%player%}
+				set slot 16 of current inventory of player to red dye named "&cJob verlassen" with lore "&cDu bist gerade in keinem Job"
+				stop
+			else:
+				send "{@P} Du bist derzeit in keinem Job!"
+				stop
+				
+		name of clicked item is "-":
+			cancel event
+				
+	name of current inventory of player is "&7➜ &9&lJob Stats":
+		cancel event
+		name of clicked item is "&cZurück":
+			make player execute command "/job"
+			
+#Job Events:
+
+
+
+
+
+on break of any log:
+	if {job.%player%} is "Holzfäller":
+		add 1 to {logs.%player%}
+		set {_random} to a random integer between 5 and 10
+		add {_random} to {geld.%player%}
+		send action bar "{@P} Du hast &6%{_random}%€ &7erhalten" to player
+		
+on break of any stone:
+	if {job.%player%} is "Minenarbeiter":
+		if player is in world "Farmwelt":
+			add 1 to {stone.%player%}
+			chance of 45%:
+				set {_random} to a random integer between 1 and 2
+				add {_random} to {geld.%player%}
+				send action bar "{@P} Du hast &6%{_random}%€  &7erhalten" to player
+		else:
+			stop
+
+			
+on break of any ore:
+	if {job.%player%} is "Minenarbeiter":
+		if player is in world "Farmwelt":
+			add 1 to {ores.%player%}
+			set {_random} to a random integer between 15 and 20
+			add {_random} to {geld.%player%}
+			send action bar "{@P} Du hast &6%{_random}%€ &7erhalten" to player
+		else:
+			stop
+	
+		
+on death:
+	if {job.%attacker%} is "Jäger":
+		if victim is not a player:
+			add 1 to {mobs.%attacker%}
+			set {_random} to a random integer between 5 and 10
+			add {_random} to {geld.%attacker%}
+			send action bar "{@P} Du hast &6%{_random}%€ &7erhalten" to attacker
+	
+on fish:   	
+	if {job.%player%} is "Angler":
+		if fish state = caught fish:
+			add 1 to {fishes.%player%}
+			set {_random} to a random integer between 60 and 80
+			add {_random} to {geld.%player%}
+			send action bar "{@P} Du hast &6%{_random}%€ &7erhalten" to player
+            
+#Job Menü
+
+command /job [<text>]:
+	aliases: jobs
+	trigger:
+		if arg-1 is not set:
+			open chest to player
+			set name of current inventory of player to "&7➜ &9&lJobs"
+			set slot 10 of current inventory of player to fishing rod named "&6Angler" with lore "&7Beschreibung:","&7 " and "&7Angel &bFische &7aus dem Wasser" 
+			set slot 11 of current inventory of player to iron axe named "&6Holzfäller" with lore "&7Beschreibung:","&7 " and "&7Baue &bHolzstämme &7ab"
+			set slot 12 of current inventory of player to iron pickaxe named "&6Minenarbeiter" with lore "&7Beschreibung:","&7 " and "&7Baue &bStein &7und &bErze&7 ab"
+			set slot 13 of current inventory of player to iron sword named "&6Jäger" with lore "&7Beschreibung:","&7 " and "&7Töte &bMobs"
+			set slot 15 of current inventory of player to skull of player named "&6Stats" with lore "&7Beschreibung:", "&7 " and "&7Schau dir deine &6Statistiken &7der einzelnen Berufe an"
+			if {job.%player%} is not set:
+				set slot 16 of current inventory of player to red dye named "&cJob verlassen" with lore "&cDu bist gerade in keinem Job"
+			else:
+				set slot 16 of current inventory of player to red dye named "&cJob verlassen" with lore "&7Du bist aktuell im &6%{job.%player%}%-Job &7tätig"
+			set slot 17 of current inventory of player to gray stained glass pane named "-"
+			set slot 0 of current inventory of player to gray stained glass pane named "-"
+			set slot 1 of current inventory of player to gray stained glass pane named "-"
+			set slot 2 of current inventory of player to gray stained glass pane named "-"
+			set slot 3 of current inventory of player to gray stained glass pane named "-"
+			set slot 4 of current inventory of player to gray stained glass pane named "-"
+			set slot 5 of current inventory of player to gray stained glass pane named "-"
+			set slot 6 of current inventory of player to gray stained glass pane named "-"
+			set slot 7 of current inventory of player to gray stained glass pane named "-"
+			set slot 8 of current inventory of player to gray stained glass pane named "-"
+			set slot 9 of current inventory of player to gray stained glass pane named "-"
+			set slot 14 of current inventory of player to gray stained glass pane named "-"
+			set slot 18 of current inventory of player to gray stained glass pane named "-"
+			set slot 19 of current inventory of player to gray stained glass pane named "-"
+			set slot 20 of current inventory of player to gray stained glass pane named "-"
+			set slot 21 of current inventory of player to gray stained glass pane named "-"
+			set slot 22 of current inventory of player to gray stained glass pane named "-"
+			set slot 23 of current inventory of player to gray stained glass pane named "-"
+			set slot 24 of current inventory of player to gray stained glass pane named "-"
+			set slot 25 of current inventory of player to gray stained glass pane named "-"
+			set slot 26 of current inventory of player to gray stained glass pane named "-"
+			
+		if arg-1 is "stats":
+			close player's inventory
+			wait 3 ticks
+			open chest to player
+			set name of current inventory of player to "&7➜ &9&lJob Stats"
+			set slot 10 of current inventory of player to fishing rod named "&6◆ Angler ◆" with lore "&7Geangelte Fische: &a%{fishes.%player%}%"
+			set slot 11 of current inventory of player to iron axe named "&6◆ Holzfäller ◆" with lore "&7Abgebaute Stämme: &a%{logs.%player%}%"
+			set slot 12 of current inventory of player to iron pickaxe named "&6◆ Minenarbeiter ◆" with lore "&7Abgebauter Stein: &a%{stone.%player%}%" and "&7Abgebaute Erze: &a%{ores.%player%}%"
+			set slot 13 of current inventory of player to iron sword named "&6◆ Jäger ◆" with lore "&7Getötete Mobs: &a%{mobs.%player%}%"
+			set slot 14 of current inventory of player to gray stained glass pane named "-"
+			set slot 16 of current inventory of player to arrow named "&cZurück"
+			set slot 0 of current inventory of player to gray stained glass pane named "-"
+			set slot 1 of current inventory of player to gray stained glass pane named "-"
+			set slot 2 of current inventory of player to gray stained glass pane named "-"
+			set slot 3 of current inventory of player to gray stained glass pane named "-"
+			set slot 4 of current inventory of player to gray stained glass pane named "-"
+			set slot 5 of current inventory of player to gray stained glass pane named "-"
+			set slot 6 of current inventory of player to gray stained glass pane named "-"
+			set slot 7 of current inventory of player to gray stained glass pane named "-"
+			set slot 8 of current inventory of player to gray stained glass pane named "-"
+			set slot 9 of current inventory of player to gray stained glass pane named "-"
+			set slot 17 of current inventory of player to gray stained glass pane named "-"
+			set slot 18 of current inventory of player to gray stained glass pane named "-"
+			set slot 19 of current inventory of player to gray stained glass pane named "-"
+			set slot 20 of current inventory of player to gray stained glass pane named "-"
+			set slot 21 of current inventory of player to gray stained glass pane named "-"
+			set slot 22 of current inventory of player to gray stained glass pane named "-"
+			set slot 23 of current inventory of player to gray stained glass pane named "-"
+			set slot 24 of current inventory of player to gray stained glass pane named "-"
+			set slot 25 of current inventory of player to gray stained glass pane named "-"
+			set slot 26 of current inventory of player to gray stained glass pane named "-"
+			set slot 15 of current inventory of player to gray stained glass pane named "-"
