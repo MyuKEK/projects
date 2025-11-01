@@ -14,7 +14,7 @@ options:
 
 
 define new bot named "Discord Bridge":
-	token: "MTE0NDc5OTY1NzM5NDk4MzA4NA.G0m3RB.ci-svWLRPAHLQbh4wUHdV86BmRwxf5DBhpxlRQ"
+	token: "BOT_TOKEN"
 	intents: default intents
 	policy: all
 	auto reconnect: true
